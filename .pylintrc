@@ -1,0 +1,8 @@
+[MASTER]
+extension-pkg-allow-list=pyodbc
+load-plugins=pylint.extensions.mccabe, pylint.extensions.docparams, pylint.extensions.docstyle
+ignore-patterns=*.pyx
+[MESSAGES CONTROL]
+disable=C0301
+[FORMAT]
+max-line-length=120

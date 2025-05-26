@@ -31,12 +31,22 @@ jobs:
       - name: Install maturin
         run: pip install maturin
 
+      - name: Download WinUniversal OpenSSL v3.5.0 installer
+        run: |
+          Invoke-WebRequest -Uri "https://slproweb.com/download/WinUniversalOpenSSL-3_5_0.exe" -OutFile $env:RUNNER_TEMP\WinUniversalOpenSSL-3_5_0.exe
+
+      - name: Install WinUniversal OpenSSL v3.5.0 (silent)
+        run: |
+          Start-Process -FilePath $env:RUNNER_TEMP\WinUniversalOpenSSL-3_5_0.exe -ArgumentList "/silent", "/verysilent", "/sp-", "/suppressmsgboxes", "/DIR=C:\OpenSSL-Universal" -Wait
+
       - name: Build cryptography wheel
         run: |
           maturin build --release --target aarch64-pc-windows-msvc --out dist -i python3.13
         env:
           MATURIN_USE_XWIN: "1"
           RUSTFLAGS: "-Ctarget-feature=+crt-static"
+          OPENSSL_DIR: C:\OpenSSL-Universal
+          OPENSSL_LIB_DIR: C:\OpenSSL-Universal\lib\VC\arm64
 
       - name: Upload built wheels
         uses: actions/upload-artifact@v4

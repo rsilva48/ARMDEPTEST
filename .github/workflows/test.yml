@@ -1,65 +1,72 @@
-name: Build and Test Cryptography Wheel for Windows ARM64
+name: Build and Test on Windows ARM64
 
-on:
-  workflow_dispatch:
+on: [push, pull_request]
 
 jobs:
-  build-cryptography-wheel:
+  build-cryptography-arm64:
     name: Build cryptography wheel for Windows ARM64
-    runs-on: windows-latest
+    runs-on: windows-latest  # Usa runner x64 para cross-compilar
 
     steps:
-      - name: Checkout cryptography repo
+      - name: Checkout cryptography source
         uses: actions/checkout@v4
         with:
           repository: pyca/cryptography
           ref: '45.0.3'
 
-      - name: Set up Python
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Install build dependencies
+      - name: Set up Rust with ARM64 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
+          components: rust-src
+
+      - name: Install cargo-xwin for cross-compilation
+        run: cargo install cargo-xwin
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Build cryptography wheel
         run: |
-          pip install cibuildwheel
-          pip install setuptools-rust
-
-      - name: Build Windows ARM64 wheel using cibuildwheel
-        run: cibuildwheel --platform windows
+          maturin build --release --target aarch64-pc-windows-msvc --out dist -i python
         env:
-          CIBW_ARCHS: ARM64
-          CIBW_BUILD: "cp313-*"
-          CIBW_ENVIRONMENT: MATURIN_INTERPRETER=python3.13 PIP_NO_BUILD_ISOLATION=1
+          MATURIN_USE_XWIN: "1"
+          RUSTFLAGS: "-Ctarget-feature=+crt-static"
 
-      - name: Upload wheel artifact
+      - name: Upload built wheels
         uses: actions/upload-artifact@v4
         with:
-          name: cryptography-wheel-windows-arm64
-          path: wheelhouse/*.whl
+          name: cryptography-wheel-arm64
+          path: dist/*.whl
 
-  test-cryptography-wheel:
-    name: Test built wheel on Windows 11 ARM64
+  test-windows-arm64:
+    name: Test on Windows ARM64
+    needs: build-cryptography-arm64
     runs-on: windows-11-arm
-    needs: build-cryptography-wheel
 
     steps:
-      - name: Set up Python
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
         uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      - name: Download built wheel
+      - name: Download built wheels
         uses: actions/download-artifact@v4
         with:
-          name: cryptography-wheel-windows-arm64
-          path: ./dist
+          name: cryptography-wheel-arm64
+          path: ./wheelhouse
 
-      - name: Install wheel and dependencies
+      - name: Install cryptography wheel and other dependencies
         run: |
           pip install --upgrade pip
-          pip install ./dist/cryptography*.whl
-          pip install cython pytest
+          pip install wheelhouse/cryptography*.whl
           if (Test-Path requirements.txt) { pip install -r requirements.txt }
 
       - name: Compile Cython code
@@ -73,6 +80,3 @@ jobs:
       - name: List files in /build
         run: |
           dir /build
-
-      - name: Verify Cryptography installation
-        run: python -c "import cryptography; print(cryptography.__version__)"

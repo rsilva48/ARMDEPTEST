@@ -31,6 +31,9 @@ jobs:
       - name: Install maturin
         run: pip install maturin
 
+      - name: Install cffi (requerido para build)
+        run: pip install cffi
+
       - name: Download WinUniversal OpenSSL v3.5.0 installer
         run: |
           Invoke-WebRequest -Uri "https://slproweb.com/download/WinUniversalOpenSSL-3_5_0.exe" -OutFile $env:RUNNER_TEMP\WinUniversalOpenSSL-3_5_0.exe

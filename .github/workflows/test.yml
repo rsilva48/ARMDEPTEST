@@ -1,50 +1,78 @@
-name: Pytest on Multiple OS
+name: Build and Test Cryptography Wheel for Windows ARM64
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
 
 jobs:
- pytest-windows-on-arm:
-    name: Pytest on Windows on ARM
-    runs-on: windows-11-arm
+  build-cryptography-wheel:
+    name: Build cryptography wheel for Windows ARM64
+    runs-on: windows-latest
+
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python 3.13
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
-    - name: Install Visual Studio C++ Build Tools (ARM64)
-      run: |
-        curl -LO https://aka.ms/vs/17/release/vs_BuildTools.exe
-        Start-Process -FilePath .\vs_BuildTools.exe -ArgumentList `
-          '--quiet', '--wait', '--norestart', `
-          '--nocache', `
-          '--add', 'Microsoft.VisualStudio.Component.VC.Tools.ARM64', `
-          '--add', 'Microsoft.VisualStudio.Workload.VCTools', `
-          '--installPath', 'C:\BuildTools' `
-          -NoNewWindow -Wait
-    - name: Add cl.exe to PATH (if needed)
-      run: |
-        $vsPath = "C:\BuildTools\VC\Tools\MSVC"
-        $versionDir = Get-ChildItem $vsPath | Sort-Object Name -Descending | Select-Object -First 1
-        $binPath = Join-Path $versionDir.FullName "bin\Hostx64\arm64"
-        $env:PATH += ";$binPath"
-    - name: Install Rust and Cargo for ARM64
-      run: |
-        curl -sSL -o rustup-init.exe https://static.rust-lang.org/rustup/dist/aarch64-pc-windows-msvc/rustup-init.exe
-        ./rustup-init.exe -y --default-toolchain stable --profile minimal
-        echo "$env:USERPROFILE\.cargo\bin" | Out-File -Append -Encoding ascii $env:GITHUB_PATH
-    - name: Install dependencies with debug output
-      run: |
-        python -m pip install --upgrade pip
-        pip install --verbose --progress-bar=off cython pytest
-        if (Test-Path requirements.txt) { pip install --verbose --progress-bar=off -r requirements.txt }
-    - name: Compile Cython code
-      run: |
-        python src/setup.py build_ext --inplace
-    - name: List files in /build
-      run: |
-        dir /build
+      - name: Checkout cryptography repo
+        uses: actions/checkout@v4
+        with:
+          repository: pyca/cryptography
+          ref: '45.0.3'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install build dependencies
+        run: |
+          pip install cibuildwheel
+          pip install setuptools-rust
+
+      - name: Build Windows ARM64 wheel using cibuildwheel
+        run: cibuildwheel --platform windows
+        env:
+          CIBW_ARCHS: ARM64
+          CIBW_BUILD: "cp313-*"
+          CIBW_ENVIRONMENT: MATURIN_INTERPRETER=python3.13 PIP_NO_BUILD_ISOLATION=1
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cryptography-wheel-windows-arm64
+          path: wheelhouse/*.whl
+
+  test-cryptography-wheel:
+    name: Test built wheel on Windows 11 ARM64
+    runs-on: windows-11-arm
+    needs: build-cryptography-wheel
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Download built wheel
+        uses: actions/download-artifact@v4
+        with:
+          name: cryptography-wheel-windows-arm64
+          path: ./dist
+
+      - name: Install wheel and dependencies
+        run: |
+          pip install --upgrade pip
+          pip install ./dist/cryptography*.whl
+          pip install cython pytest
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+
+      - name: Compile Cython code
+        run: |
+          python src/setup.py build_ext --inplace
+
+      - name: Run Pytest
+        run: |
+          pytest tests/
+
+      - name: List files in /build
+        run: |
+          dir /build
+
+      - name: Verify Cryptography installation
+        run: python -c "import cryptography; print(cryptography.__version__)"

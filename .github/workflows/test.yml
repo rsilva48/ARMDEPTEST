@@ -47,6 +47,7 @@ jobs:
           RUSTFLAGS: "-Ctarget-feature=+crt-static"
           OPENSSL_DIR: C:\OpenSSL-Universal
           OPENSSL_LIB_DIR: C:\OpenSSL-Universal\lib\VC\arm64
+          OPENSSL_INCLUDE_DIR: C:\OpenSSL-Universal\include\arm64
 
       - name: Upload built wheels
         uses: actions/upload-artifact@v4

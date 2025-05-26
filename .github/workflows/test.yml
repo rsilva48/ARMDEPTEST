@@ -46,7 +46,7 @@ jobs:
           MATURIN_USE_XWIN: "1"
           RUSTFLAGS: "-Ctarget-feature=+crt-static"
           OPENSSL_DIR: C:\OpenSSL-Universal
-          OPENSSL_LIB_DIR: C:\OpenSSL-Universal\lib\VC\arm64
+          OPENSSL_LIB_DIR: C:\OpenSSL-Universal\lib\VC\arm64\MT
           OPENSSL_INCLUDE_DIR: C:\OpenSSL-Universal\include\arm64
 
       - name: Upload built wheels

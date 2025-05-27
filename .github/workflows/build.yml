@@ -20,36 +20,14 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Set up Rust with ARM64 target
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-pc-windows-msvc
-          components: rust-src
-
-      - name: Install cargo-xwin for cross-compilation
-        run: cargo install cargo-xwin
-
-      - name: Install maturin
-        run: pip install maturin
-
-      - name: Install cffi (requerido para build)
-        run: pip install cffi
-
-      - name: Install setuptools (requerido para build)
-        run: pip install setuptools
-
-      - name: Download Python 3.13 ARM64 dev libraries
+      - name: Install build dependencies
         run: |
-          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/pythonarm64/3.13.3" -OutFile python-arm64.zip
-          Expand-Archive -Path python-arm64.zip -DestinationPath $env:RUNNER_TEMP\python-arm64
+          pip install --upgrade pip
+          pip install wheel setuptools cffi
 
       - name: Build PyNaCl wheel
         run: |
-          $env:LIB="$env:RUNNER_TEMP\python-arm64\tools\libs;$env:LIB"
-          maturin build --release --target aarch64-pc-windows-msvc --out dist -i python3.13
-        env:
-          MATURIN_USE_XWIN: "1"
-          RUSTFLAGS: "-Ctarget-feature=+crt-static"
+          python -m pip wheel . --wheel-dir dist --no-deps --plat-name=win_arm64
 
       - name: List built wheels and show wheel filename
         run: |

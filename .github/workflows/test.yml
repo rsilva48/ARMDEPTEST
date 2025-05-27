@@ -27,6 +27,22 @@ jobs:
           Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile cryptography-wheel-arm64.zip
           Expand-Archive -Path cryptography-wheel-arm64.zip -DestinationPath wheelhouse
 
+      - name: Download latest pynacl wheel artifact from build workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repo = "${{ github.repository }}"
+          $artifactName = "pynacl-wheel-arm64"
+          $apiUrl = "https://api.github.com/repos/$repo/actions/artifacts"
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; "Accept" = "application/vnd.github+json" }
+          $artifacts = Invoke-RestMethod -Uri $apiUrl -Headers $headers
+          $artifact = $artifacts.artifacts | Where-Object { $_.name -eq $artifactName } | Sort-Object created_at -Descending | Select-Object -First 1
+          if (-not $artifact) { throw "Artifact '$artifactName' not found" }
+          $downloadUrl = $artifact.archive_download_url
+          Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile pynacl-wheel-arm64.zip
+          Expand-Archive -Path pynacl-wheel-arm64.zip -DestinationPath wheelhouse
+
       - name: List files in wheelhouse before install
         run: |
           dir wheelhouse
@@ -59,6 +75,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install $(Resolve-Path wheelhouse/cryptography*.whl)
+          pip install $(Resolve-Path wheelhouse/PyNaCl*.whl)
           if (Test-Path requirements.txt) { pip install -r requirements.txt }
 
       - name: Compile Cython code

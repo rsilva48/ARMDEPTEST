@@ -61,6 +61,10 @@ jobs:
           OPENSSL_LIB_DIR: C:\OpenSSL-Universal\lib\VC\arm64\MT
           OPENSSL_INCLUDE_DIR: C:\OpenSSL-Universal\include\arm64
 
+      - name: List built wheels and show wheel filename
+        run: |
+          dir dist
+
       - name: Upload built wheels
         uses: actions/upload-artifact@v4
         with:
@@ -85,6 +89,10 @@ jobs:
         with:
           name: cryptography-wheel-arm64
           path: ./wheelhouse
+
+      - name: List files in wheelhouse before install
+        run: |
+          dir wheelhouse
 
       - name: Install cryptography wheel and other dependencies
         run: |

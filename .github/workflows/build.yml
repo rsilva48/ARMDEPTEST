@@ -1,11 +1,11 @@
-name: Build Cryptography on Windows ARM64
+name: Build Wheels on Windows ARM64
 
 on: [workflow_dispatch]
 
 jobs:
   build-pynacl-arm64:
     name: Build PyNaCl wheel for Windows ARM64
-    runs-on: windows-latest
+    runs-on: windows-11-arm
     if: github.event_name == 'workflow_dispatch'
 
     steps:
@@ -27,7 +27,7 @@ jobs:
 
       - name: Build PyNaCl wheel
         run: |
-          python -m pip wheel . --wheel-dir dist --no-deps --plat-name=win_arm64
+          python -m pip wheel . --wheel-dir dist --no-deps
 
       - name: List built wheels and show wheel filename
         run: |

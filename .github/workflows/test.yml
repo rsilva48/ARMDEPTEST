@@ -94,6 +94,11 @@ jobs:
         run: |
           dir wheelhouse
 
+      - name: Install NumPy ARM64 experimental wheel
+        run: |
+          Invoke-WebRequest -Uri "https://github.com/cgohlke/win_arm64-wheels/releases/download/v2025.3.31/numpy-2.2.4-cp313-cp313-win_arm64.whl" -OutFile numpy-2.2.4-cp313-cp313-win_arm64.whl
+          pip install numpy-2.2.4-cp313-cp313-win_arm64.whl
+
       - name: Install cryptography wheel and other dependencies
         run: |
           pip install --upgrade pip

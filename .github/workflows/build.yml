@@ -70,3 +70,61 @@ jobs:
         with:
           name: cryptography-wheel-arm64
           path: dist/*.whl
+
+  build-pynacl-arm64:
+    name: Build PyNaCl wheel for Windows ARM64
+    runs-on: windows-latest
+    if: github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout PyNaCl source
+        uses: actions/checkout@v4
+        with:
+          repository: pyca/pynacl
+          ref: 'main'
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Set up Rust with ARM64 target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-pc-windows-msvc
+          components: rust-src
+
+      - name: Install cargo-xwin for cross-compilation
+        run: cargo install cargo-xwin
+
+      - name: Install maturin
+        run: pip install maturin
+
+      - name: Install cffi (requerido para build)
+        run: pip install cffi
+
+      - name: Install setuptools (requerido para build)
+        run: pip install setuptools
+
+      - name: Download Python 3.13 ARM64 dev libraries
+        run: |
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/pythonarm64/3.13.3" -OutFile python-arm64.zip
+          Expand-Archive -Path python-arm64.zip -DestinationPath $env:RUNNER_TEMP\python-arm64
+
+      - name: Build PyNaCl wheel
+        run: |
+          $env:LIB="$env:RUNNER_TEMP\python-arm64\tools\libs;$env:LIB"
+          maturin build --release --target aarch64-pc-windows-msvc --out dist -i python3.13
+        env:
+          MATURIN_USE_XWIN: "1"
+          RUSTFLAGS: "-Ctarget-feature=+crt-static"
+
+      - name: List built wheels and show wheel filename
+        run: |
+          dir dist
+
+      - name: Upload built wheels
+        uses: actions/upload-artifact@v4
+        with:
+          name: pynacl-wheel-arm64
+          path: dist/*.whl

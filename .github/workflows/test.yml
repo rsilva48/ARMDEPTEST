@@ -10,16 +10,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python 3.13
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.13"
-
-      - name: Download cryptography wheel artifact from latest successful build
-        uses: actions/download-artifact@v4
-        with:
-          name: cryptography-wheel-arm64
-          path: wheelhouse
+      
+      - name: Download latest cryptography wheel artifact from build workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          $ErrorActionPreference = "Stop"
+          $repo = "${{ github.repository }}"
+          $artifactName = "cryptography-wheel-arm64"
+          $apiUrl = "https://api.github.com/repos/$repo/actions/artifacts"
+          $headers = @{ Authorization = "Bearer $env:GH_TOKEN"; "Accept" = "application/vnd.github+json" }
+          $artifacts = Invoke-RestMethod -Uri $apiUrl -Headers $headers
+          $artifact = $artifacts.artifacts | Where-Object { $_.name -eq $artifactName } | Sort-Object created_at -Descending | Select-Object -First 1
+          if (-not $artifact) { throw "Artifact '$artifactName' not found" }
+          $downloadUrl = $artifact.archive_download_url
+          Invoke-WebRequest -Uri $downloadUrl -Headers $headers -OutFile cryptography-wheel-arm64.zip
+          Expand-Archive -Path cryptography-wheel-arm64.zip -DestinationPath wheelhouse
 
       - name: List files in wheelhouse before install
         run: |
@@ -29,6 +35,11 @@ jobs:
         run: |
           Invoke-WebRequest -Uri "https://github.com/cgohlke/win_arm64-wheels/releases/download/v2025.3.31/2025.3.31-experimental-cp313-win_arm64.whl.zip" -OutFile wheels-arm64.zip
           Expand-Archive -Path wheels-arm64.zip -DestinationPath wheels-arm64
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
       - name: List all files in wheels-arm64 recursively
         run: |

@@ -20,6 +20,23 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Install Visual Studio C++ Build Tools (ARM64)
+        run: |
+          curl -LO https://aka.ms/vs/17/release/vs_BuildTools.exe
+          Start-Process -FilePath .\vs_BuildTools.exe -ArgumentList `
+            '--quiet', '--wait', '--norestart', `
+            '--nocache', `
+            '--add', 'Microsoft.VisualStudio.Component.VC.Tools.ARM64', `
+            '--add', 'Microsoft.VisualStudio.Workload.VCTools', `
+            '--installPath', 'C:\BuildTools' `
+            -NoNewWindow -Wait
+      - name: Add cl.exe to PATH (if needed)
+        run: |
+          $vsPath = "C:\BuildTools\VC\Tools\MSVC"
+          $versionDir = Get-ChildItem $vsPath | Sort-Object Name -Descending | Select-Object -First 1
+          $binPath = Join-Path $versionDir.FullName "bin\Hostx64\arm64"
+          $env:PATH += ";$binPath"
+      
       - name: Install build dependencies
         run: |
           pip install --upgrade pip

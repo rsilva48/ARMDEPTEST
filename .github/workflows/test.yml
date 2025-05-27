@@ -15,10 +15,11 @@ jobs:
         with:
           python-version: "3.13"
 
-      - name: Download cryptography wheel artifact (manual URL)
-        run: |
-          Invoke-WebRequest -Uri "https://github.com/rsilva48/ARMDEPTEST/actions/runs/15278442163/artifacts/3204920320" -OutFile cryptography-wheel-arm64.zip
-          Expand-Archive -Path cryptography-wheel-arm64.zip -DestinationPath wheelhouse
+      - name: Download cryptography wheel artifact from latest successful build
+        uses: actions/download-artifact@v4
+        with:
+          name: cryptography-wheel-arm64
+          path: wheelhouse
 
       - name: List files in wheelhouse before install
         run: |

@@ -94,10 +94,20 @@ jobs:
         run: |
           dir wheelhouse
 
-      - name: Install NumPy ARM64 experimental wheel
+      - name: Download and extract ARM64 wheels pack (Gohlke)
         run: |
-          Invoke-WebRequest -Uri "https://github.com/cgohlke/win_arm64-wheels/releases/download/v2025.3.31/numpy-2.2.4-cp313-cp313-win_arm64.whl" -OutFile numpy-2.2.4-cp313-cp313-win_arm64.whl
-          pip install numpy-2.2.4-cp313-cp313-win_arm64.whl
+          Invoke-WebRequest -Uri "https://github.com/cgohlke/win_arm64-wheels/releases/download/v2025.3.31/2025.3.31-experimental-cp313-win_arm64.whl.zip" -OutFile wheels-arm64.zip
+          Expand-Archive -Path wheels-arm64.zip -DestinationPath wheels-arm64
+
+      - name: Install ARM64 wheels from pack
+        run: |
+          pip install wheels-arm64/bcrypt-4.3.0-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/cffi-1.17.1-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/greenlet-3.1.1-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/numpy-2.2.4-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/pandas-2.2.3-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/pyodbc-5.2.0-cp313-cp313-win_arm64.whl
+          pip install wheels-arm64/SQLAlchemy-2.0.40-cp313-cp313-win_arm64.whl
 
       - name: Install cryptography wheel and other dependencies
         run: |

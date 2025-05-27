@@ -45,8 +45,14 @@ jobs:
         run: |
           Start-Process -FilePath $env:RUNNER_TEMP\WinUniversalOpenSSL-3_5_0.exe -ArgumentList "/silent", "/verysilent", "/sp-", "/suppressmsgboxes", "/DIR=C:\OpenSSL-Universal" -Wait
 
+      - name: Download Python 3.13 ARM64 dev libraries
+        run: |
+          Invoke-WebRequest -Uri "https://www.nuget.org/api/v2/package/pythonarm64/3.13.3" -OutFile python-arm64.zip
+          Expand-Archive -Path python-arm64.zip -DestinationPath $env:RUNNER_TEMP\python-arm64
+
       - name: Build cryptography wheel
         run: |
+          $env:LIB="$env:RUNNER_TEMP\python-arm64\tools\libs;C:\OpenSSL-Universal\lib\VC\arm64\MT;$env:LIB"
           maturin build --release --target aarch64-pc-windows-msvc --out dist -i python3.13
         env:
           MATURIN_USE_XWIN: "1"

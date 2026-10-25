@@ -1,0 +1,10 @@
+# Dependencias directas (build: Cython/setuptools/pyinstaller)
+Cython
+setuptools
+pyinstaller
+openpyxl
+paramiko<4  # pysftp 0.2.9 (abandonado) importa DSSKey, eliminado en paramiko 4
+pysftp
+pyotp
+python-dotenv
+requests
